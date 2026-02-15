@@ -1,25 +1,89 @@
-# Woomy-Arras Offline (This Repo)
+# Woomy-Arras Offline
 
 ## Background
 
-Woomy Offline lost its funding. After that loss, the project had to be taken down.
+Woomy-Arras Offline is a community continuation of the original offline Woomy project after it lost funding and had to be taken down.
 
-This codebase is originally a copy of **Drako Hyena's** offline _woomy-arras.io_ files from **2018**.
-This repo was forked from @spades1354
+This codebase is based on core server files from August 2020 combined with older Arras source files. The original game (Arras / Arras.io) was created by Clarise. Later, Drako Hyena recovered and rebuilt offline versions of the game files around 2018, which became the foundation for many offline Woomy projects.
+
+This repository was later forked and modified by Spade1354, and is currently being expanded and maintained by LevyMaze.
+
+The goal of this project is to preserve Woomy-Arras in an offline form while also experimenting with new game modes, mechanics, and developer tools.
+
+---
+
 
 ## History / Credits
 
-- Modified by **Spade1354** to re-add many missing/lost tanks, plus additional AI and bot changes.
-  - GitHub: https://github.com/spade1345
-- Modified again by **LevyMaze** to re-add many Growth modes and other testing features.
-  - GitHub: https://github.com/levymaze
+This project has passed through several contributors:
 
-## What I added
+- Clarise
+  Original creator of Arras / Arras.io.
 
-- Re-added Growth FFA as well as many growth hybrid modes like Growth 4TDM, Growth Seige (Boss Rush), Growth Maze FFA.
-- Added a Better Beta Testing Panel with Score Editing and Skill point editing.
-- Added a World Edit Feature in Testing panel that Edits Total Bot and Total Polygon amounts.
-- Many New Admin commands (Accessable via Dev Token) like "I" for adding score to an Entity, "U" to decrease score from an Entity, "H" to Instantly Heal any Entity and "Q" to Instant teleport but with Immunity added, "+" To increase FoV and "-" to decrease FoV.
-- A button to spawn Boss in any map.
+- Drako Hyena
+  Recovered and rebuilt offline Arras files around 2018.
 
-I'm not planning on stopping, more features may come out soon. One of the problems I face is that the entire logic is too cramped and not optimized, but we'll see how this goes.
+- Spade1354
+  Restored many missing tanks and added AI and bot improvements. Also merged multiple legacy sources to make the project playable offline.
+
+- LevyMaze
+  Added Growth modes, testing tools, admin features, and continues active development.
+
+---
+
+## What I Added
+
+### Game Modes
+
+- Re-added Growth FFA.
+- Added several Growth hybrid modes including:
+  - Growth 4TDM
+  - Growth Siege (Boss Rush)
+  - Growth Maze FFA
+
+These modes are mainly for experimentation and fun while keeping the original Arras feel.
+
+---
+
+### Testing Tools
+
+- Improved Beta Testing Panel:
+  - Score editing
+  - Skill point editing
+
+- Added World Edit options inside the testing panel:
+  - Change total bot count
+  - Change total polygon count
+
+---
+
+### Admin / Developer Commands (Dev Token Required)
+
+Added multiple admin commands for testing and moderation:
+
+- I – Increase entity score
+- U – Decrease entity score
+- H – Instantly heal any entity
+- Q – Instant teleport with temporary immunity
+- + – Increase Field of View
+- - – Decrease Field of View
+
+Also added:
+
+- A button to spawn bosses on any map.
+
+These tools are mainly meant for development and sandbox testing.
+
+---
+
+## Ongoing Development
+
+This project is still being worked on.
+
+More features may be added over time.
+
+One current issue is that much of the logic is cramped and not well optimized due to legacy structure. Refactoring will take time, but improvements will be made gradually.
+
+If you’re experimenting or building on this, feel free to explore and modify it.
+
+---
