@@ -3983,11 +3983,11 @@ for (let e of ["log", "warn", "info", "spawn", "error"]) {
               "Growth" === c.serverName)
           ),
         targetScoreForQuarterSize: 200000,
-        targetSizeGrowthAtScore: 1 / 3,
-        sizeGrowthExponent: 0.6,
+        targetSizeGrowthAtScore: 0.36,
+        sizeGrowthExponent: 0.72,
         skillPointPerScore: 200000,
-        fovPerGrowth: 0.2,
-        maxFovMultiplier: 1.35,
+        fovPerGrowth: 0.08,
+        maxFovMultiplier: 1.15,
         healthPerGrowth: 0.5,
         damagePerGrowth: 0.2,
         barrelPerGrowth: 1,
@@ -5934,7 +5934,7 @@ for (let e of ["log", "warn", "info", "spawn", "error"]) {
           (this.range = this.RANGE),
           (this.fov =
             250 *
-            this.FOV *
+            (null != this.devFovOverride ? this.devFovOverride : this.FOV) *
             Math.sqrt(this.size) *
             (1 + 0.003 * this.skill.level)),
           (this.density =
@@ -5947,7 +5947,7 @@ for (let e of ["log", "warn", "info", "spawn", "error"]) {
       refreshFOV() {
         this.fov =
           250 *
-          this.FOV *
+          (null != this.devFovOverride ? this.devFovOverride : this.FOV) *
           Math.sqrt(this.size) *
           (1 + 0.003 * this.skill.level);
       }
@@ -9744,15 +9744,18 @@ for (let e of ["log", "warn", "info", "spawn", "error"]) {
                         // Keep within a safe range to avoid accidental performance issues.
                         const minFov = 0.1;
                         const maxFov = 5;
-                        let next = a.FOV;
+                        // Use a dev-only override so Growth Mode (and other systems) can keep updating a.FOV
+                        // without snapping the player's camera back.
+                        let next =
+                          null != a.devFovOverride ? a.devFovOverride : a.FOV;
                         if ("fov_set" === e) {
                           next = r(Number(v) || 0, minFov, maxFov);
                         } else {
                           // Clamp per-keypress delta to avoid extreme jumps.
                           const delta = r(Number(v) || 0, -0.5, 0.5);
-                          next = r((Number(a.FOV) || 1) + delta, minFov, maxFov);
+                          next = r((Number(next) || 1) + delta, minFov, maxFov);
                         }
-                        a.FOV = next;
+                        a.devFovOverride = next;
                         a.refreshFOV && a.refreshFOV();
                         this.talk("Z", "[INFO] Set FoV to " + next.toFixed(2) + ".");
                       }
