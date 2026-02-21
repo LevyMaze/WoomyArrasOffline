@@ -3348,7 +3348,8 @@
                                                             angle: toRad(p[5]),
                                                             color: gun && gun.PROPERTIES && gun.PROPERTIES.COLOR != null ? gun.PROPERTIES.COLOR : 16,
                                                             color_unmix: gun && gun.PROPERTIES && gun.PROPERTIES.COLOR_UNMIX != null ? gun.PROPERTIES.COLOR_UNMIX : 0,
-                                                            skin: gun && gun.PROPERTIES && gun.PROPERTIES.SKIN != null ? gun.PROPERTIES.SKIN : 0
+                                                            skin: gun && gun.PROPERTIES && gun.PROPERTIES.SKIN != null ? gun.PROPERTIES.SKIN : 0,
+                                                            draw_z: gun && gun.PROPERTIES && gun.PROPERTIES.DRAW_Z != null ? Number(gun.PROPERTIES.DRAW_Z) : null
                                                         };
                                                     };
                                                     const convertTurret = (turretDef) => {
@@ -5234,7 +5235,16 @@
                                 {
                                     let positions = source.guns.getPositions();
                                     const gunCount = Math.min(source.guns.length, m.guns.length);
-                                    for (let i = 0; i < gunCount; i++) {
+                                    const gunOrder = Array.from({
+                                        length: gunCount
+                                    }, (_, i) => i).sort((a, b) => {
+                                        const ga = m.guns[a] || {};
+                                        const gb = m.guns[b] || {};
+                                        const za = ga.draw_z == null ? a : ga.draw_z;
+                                        const zb = gb.draw_z == null ? b : gb.draw_z;
+                                        return za === zb ? a - b : za - zb;
+                                    });
+                                    for (const i of gunOrder) {
                                         let g = m.guns[i],
                                             position = positions[i] / (((g.aspect == null ? 1 : g.aspect) === 1) ? 2 : 1),
                                             gx = g.offset * Math.cos(g.direction + (g.angle || 0) + rot) + (g.length / 2 - position) * Math.cos((g.angle || 0) + rot),
