@@ -2728,7 +2728,10 @@ for (let e of ["log", "warn", "info", "spawn", "error"]) {
       }),
       (ioTypes.minion = class extends IO {
         constructor(e) {
-          super(e), (this.turnwise = 1);
+          super(e),
+            (this.turnwise = 1),
+            (this.altStickLock = !1),
+            (this.lastAltTarget = null);
         }
         think(e) {
           if (null != e.target && (e.alt || e.main)) {
@@ -2739,8 +2742,18 @@ for (let e of ["log", "warn", "info", "spawn", "error"]) {
               o = 135 * s,
               r = 1,
               n = new Vector(e.target.x, e.target.y);
-            if (e.alt)
-              if (n.length < i)
+            if (e.alt) {
+              let l = 120 * s,
+                h = 90 * s,
+                u = !1;
+              if (this.lastAltTarget) {
+                let e = n.x - this.lastAltTarget.x,
+                  t = n.y - this.lastAltTarget.y;
+                u = e * e + t * t > h * h;
+              }
+              u && (this.altStickLock = !1),
+                !this.altStickLock && n.length < l && (this.altStickLock = !0);
+              if (this.altStickLock || n.length < i)
                 t = {
                   x: this.body.x + n.x,
                   y: this.body.y + n.y,
@@ -2756,7 +2769,13 @@ for (let e of ["log", "warn", "info", "spawn", "error"]) {
                   x: this.body.x - n.x,
                   y: this.body.y - n.y,
                 };
-            else if (e.main) {
+              this.lastAltTarget = {
+                x: n.x,
+                y: n.y,
+              };
+            } else if (
+              ((this.altStickLock = !1), (this.lastAltTarget = null), e.main)
+            ) {
               let e = this.turnwise * n.direction + 0.01;
               (t = {
                 x: this.body.x + n.x - a * Math.cos(e),
@@ -2769,6 +2788,7 @@ for (let e of ["log", "warn", "info", "spawn", "error"]) {
               power: r,
             };
           }
+          (this.altStickLock = !1), (this.lastAltTarget = null);
         }
       }),
       (ioTypes.minionNoRepel = class extends IO {
@@ -4619,6 +4639,7 @@ for (let e of ["log", "warn", "info", "spawn", "error"]) {
             : null != this.submarine &&
               this.submarine.maxAir > 0 &&
               (this.submarine.maxAir = 0),
+          null != e.CLEAR_UPGRADES && e.CLEAR_UPGRADES && (this.upgrades = []),
           null != e.UPGRADES_TIER_1)
         )
           for (let t of e.UPGRADES_TIER_1)
@@ -5684,6 +5705,8 @@ for (let e of ["log", "warn", "info", "spawn", "error"]) {
                 ),
                   (this.miscIdentifier = this.sanctuaryType = "None");
             }
+          if (null != e.CLEAR_UPGRADES && e.CLEAR_UPGRADES)
+            this.upgrades = [];
           if (null != e.UPGRADES_TIER_1)
             for (let t of e.UPGRADES_TIER_1)
               this.upgrades.push({
@@ -5773,7 +5796,9 @@ for (let e of ["log", "warn", "info", "spawn", "error"]) {
               null != e.BODY.DAMAGE && (this.DAMAGE = e.BODY.DAMAGE),
               null != e.BODY.PENETRATION &&
                 (this.PENETRATION = e.BODY.PENETRATION),
-              null != e.BODY.FOV && (this.FOV = e.BODY.FOV),
+              null != e.BODY.FOV &&
+                ((this.FOV = e.BODY.FOV),
+                this.growthData && (this.growthData.baseFOV = this.FOV)),
               null != e.BODY.RANGE && (this.RANGE = e.BODY.RANGE),
               null != e.BODY.SHOCK_ABSORB &&
                 (this.SHOCK_ABSORB = e.BODY.SHOCK_ABSORB),
@@ -9487,7 +9512,9 @@ for (let e of ["log", "warn", "info", "spawn", "error"]) {
                     a.invisible = [s[1], s[2], s[3]];
                     break;
                   case 11:
-                    (a.FOV = s[1]), a.refreshFOV();
+                    (a.FOV = s[1]),
+                      a.growthData && (a.growthData.baseFOV = a.FOV),
+                      a.refreshFOV();
                     break;
                   case 12:
                     a.spinSpeed = s[1];
@@ -13658,6 +13685,7 @@ for (let e of ["log", "warn", "info", "spawn", "error"]) {
                   let s = getEntity(e);
                   if (null == s) return sendInvalidID("Set FoV", e);
                   (s.FOV = t),
+                    s.growthData && (s.growthData.baseFOV = s.FOV),
                     s.refreshFOV(),
                     sendNormal(
                       "Set FoV",

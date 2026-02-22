@@ -1949,7 +1949,13 @@
                         });*/
                         function getEntityImageFromMockup(index, color) {
                             let mockup = mockups[index];
-                            if (!mockup) throw new Error("Failed to find mockup " + index);
+                            if (!mockup) {
+                                const fallback = mockups[0];
+                                if (!fallback) throw new Error("Failed to find mockup " + index);
+                                console.warn("Missing mockup index", index, "- falling back to index 0");
+                                mockup = fallback;
+                                index = 0;
+                            }
                             color = mockup.color == null || mockup.color === 16 ? arguments[1] : mockup.color;
                             return {
                                 time: 0,
@@ -3334,11 +3340,57 @@
                                                         return ref;
                                                     };
                                                     const getEntry = (index) => Number.isInteger(index) && index >= 0 ? mockups[index] : null;
+                                                    const normalizeEntry = (entry, index) => {
+                                                        if (!entry || typeof entry !== "object") entry = {};
+                                                        entry.index = index;
+                                                        entry.name = entry.name || entry.label || ("Tank " + index);
+                                                        if (!Array.isArray(entry.guns)) entry.guns = [];
+                                                        if (!Array.isArray(entry.turrets)) entry.turrets = [];
+                                                        if (!Array.isArray(entry.upgrades)) entry.upgrades = [];
+                                                        if (!entry.position || typeof entry.position !== "object") {
+                                                            entry.position = {
+                                                                axis: 1,
+                                                                middle: { x: 0, y: 0 },
+                                                                points: []
+                                                            };
+                                                        }
+                                                        if (!Number.isFinite(entry.position.axis) || entry.position.axis <= 0) {
+                                                            entry.position.axis = Math.max(1, Number(entry.size) || 1);
+                                                        }
+                                                        if (!entry.position.middle || typeof entry.position.middle !== "object") {
+                                                            entry.position.middle = { x: 0, y: 0 };
+                                                        }
+                                                        entry.position.middle.x = Number(entry.position.middle.x) || 0;
+                                                        entry.position.middle.y = Number(entry.position.middle.y) || 0;
+                                                        if (!Array.isArray(entry.position.points)) entry.position.points = [];
+                                                        for (const key in mockupDefaults) {
+                                                            if (entry[key] == null) entry[key] = mockupDefaults[key];
+                                                        }
+                                                        return entry;
+                                                    };
+                                                    const ensureEntryForDef = (def) => {
+                                                        if (!def || !Number.isInteger(def.index)) return null;
+                                                        let existing = getEntry(def.index);
+                                                        if (existing) return existing;
+                                                        let seed = {};
+                                                        const parentRef = Array.isArray(def.PARENT) ? def.PARENT[0] : def.PARENT;
+                                                        const parentDef = resolveDef(parentRef);
+                                                        if (parentDef && Number.isInteger(parentDef.index)) {
+                                                            const parentEntry = ensureEntryForDef(parentDef);
+                                                            if (parentEntry) seed = JSON.parse(JSON.stringify(parentEntry));
+                                                        }
+                                                        seed.name = def.LABEL || seed.name;
+                                                        if (def.SHAPE != null) seed.shape = def.SHAPE;
+                                                        if (def.COLOR != null) seed.color = def.COLOR;
+                                                        mockups[def.index] = normalizeEntry(seed, def.index);
+                                                        return mockups[def.index];
+                                                    };
                                                     const convertGun = (gun) => {
                                                         const p = gun && gun.POSITION;
                                                         if (!Array.isArray(p) || p.length < 6) return null;
                                                         const x = Number(p[3]) || 0;
                                                         const y = Number(p[4]) || 0;
+                                                        const recoilSource = gun && gun.PROPERTIES && gun.PROPERTIES.RECOIL_SOURCE;
                                                         return {
                                                             length: Math.max(0, (Number(p[0]) || 0) / 20),
                                                             width: Math.max(0, (Number(p[1]) || 0) / 20),
@@ -3349,7 +3401,8 @@
                                                             color: gun && gun.PROPERTIES && gun.PROPERTIES.COLOR != null ? gun.PROPERTIES.COLOR : 16,
                                                             color_unmix: gun && gun.PROPERTIES && gun.PROPERTIES.COLOR_UNMIX != null ? gun.PROPERTIES.COLOR_UNMIX : 0,
                                                             skin: gun && gun.PROPERTIES && gun.PROPERTIES.SKIN != null ? gun.PROPERTIES.SKIN : 0,
-                                                            draw_z: gun && gun.PROPERTIES && gun.PROPERTIES.DRAW_Z != null ? Number(gun.PROPERTIES.DRAW_Z) : null
+                                                            draw_z: gun && gun.PROPERTIES && gun.PROPERTIES.DRAW_Z != null ? Number(gun.PROPERTIES.DRAW_Z) : null,
+                                                            recoil_source: Number.isInteger(recoilSource) ? recoilSource : null
                                                         };
                                                     };
                                                     const convertTurret = (turretDef) => {
@@ -3358,7 +3411,7 @@
                                                         const typeOverride = Array.isArray(turretDef.TYPE) ? turretDef.TYPE[1] : null;
                                                         const typeDef = resolveDef(turretDef.TYPE);
                                                         const typeIndex = typeDef && Number.isInteger(typeDef.index) ? typeDef.index : null;
-                                                        const base = getEntry(typeIndex);
+                                                        const base = getEntry(typeIndex) || ensureEntryForDef(typeDef);
                                                         if (!base) return null;
                                                         const t = JSON.parse(JSON.stringify(base));
                                                         const x = Number(p[1]) || 0;
@@ -3379,35 +3432,122 @@
                                                     const patchTank = (defName) => {
                                                         const d = defs[defName];
                                                         if (!d || !Number.isInteger(d.index)) return;
-                                                        const entry = getEntry(d.index);
+                                                        const entry = getEntry(d.index) || ensureEntryForDef(d);
                                                         if (!entry) return;
                                                         entry.name = d.LABEL || entry.name;
-                                                        const guns = (d.GUNS || []).map(convertGun).filter(Boolean);
-                                                        const turrets = (d.TURRETS || []).map(convertTurret).filter(Boolean);
+                                                        if (Array.isArray(d.GUNS)) {
+                                                            entry.guns = d.GUNS.map(convertGun).filter(Boolean);
+                                                        }
+                                                        if (Array.isArray(d.TURRETS)) {
+                                                            entry.turrets = d.TURRETS.map(convertTurret).filter(Boolean);
+                                                        }
+                                                        normalizeEntry(entry, d.index);
+                                                    };
+                                                    const setTankMockupGuns = (defName, gunPositions) => {
+                                                        const d = defs[defName];
+                                                        if (!d || !Number.isInteger(d.index)) return;
+                                                        const entry = getEntry(d.index) || ensureEntryForDef(d);
+                                                        if (!entry) return;
+                                                        const guns = (gunPositions || []).map((gunSpec) => {
+                                                            if (Array.isArray(gunSpec)) {
+                                                                return convertGun({
+                                                                    POSITION: gunSpec,
+                                                                    PROPERTIES: {}
+                                                                });
+                                                            }
+                                                            if (!gunSpec || !Array.isArray(gunSpec.position)) return null;
+                                                            const props = {};
+                                                            if (gunSpec.draw_z != null) props.DRAW_Z = Number(gunSpec.draw_z);
+                                                            if (gunSpec.color != null) props.COLOR = Number(gunSpec.color);
+                                                            if (gunSpec.color_unmix != null) props.COLOR_UNMIX = Number(gunSpec.color_unmix);
+                                                            if (gunSpec.skin != null) props.SKIN = Number(gunSpec.skin);
+                                                            if (gunSpec.recoil_from != null) props.RECOIL_SOURCE = Number(gunSpec.recoil_from);
+                                                            return convertGun({
+                                                                POSITION: gunSpec.position,
+                                                                PROPERTIES: props
+                                                            });
+                                                        }).filter(Boolean);
+                                                        if (!guns.length) return;
+                                                        entry.name = d.LABEL || entry.name;
                                                         entry.guns = guns;
-                                                        entry.turrets = turrets;
+                                                        normalizeEntry(entry, d.index);
                                                     };
                                                     const setUpgrades = (fromName, toNames, removeNames) => {
                                                         const from = defs[fromName];
                                                         if (!from || !Number.isInteger(from.index)) return;
-                                                        const entry = getEntry(from.index);
+                                                        const entry = getEntry(from.index) || ensureEntryForDef(from);
                                                         if (!entry) return;
                                                         let list = Array.isArray(entry.upgrades) ? entry.upgrades.slice() : [];
                                                         const removeIdx = (removeNames || []).map(n => defs[n]).filter(Boolean).map(d => d.index);
                                                         list = list.filter(i => !removeIdx.includes(i));
                                                         for (const n of toNames) {
                                                             const d = defs[n];
-                                                            if (d && Number.isInteger(d.index) && !list.includes(d.index)) list.push(d.index);
+                                                            if (d && Number.isInteger(d.index)) {
+                                                                if (!getEntry(d.index)) ensureEntryForDef(d);
+                                                                if (getEntry(d.index) && !list.includes(d.index)) list.push(d.index);
+                                                            }
                                                         }
                                                         entry.upgrades = list;
                                                     };
+                                                    // Ensure any newly-added definitions have a fallback mockup entry,
+                                                    // so UI rendering doesn't crash on missing `mockups[index]`.
+                                                    for (const defName in defs) {
+                                                        if (!Object.prototype.hasOwnProperty.call(defs, defName)) continue;
+                                                        const def = defs[defName];
+                                                        if (!def || !Number.isInteger(def.index)) continue;
+                                                        if (!getEntry(def.index)) ensureEntryForDef(def);
+                                                    }
+                                                    patchTank("crowbarT4");
                                                     patchTank("wrench");
                                                     patchTank("spanner");
+                                                    // Keep Top Banana UI barrels independent from gameplay GUNS in definitions.
+                                                    setTankMockupGuns("factorySpawner", [
+                                { position: [27, 40, 1, 0, 0, 0, 0], draw_z: 4 },
+                                { position: [3, 40, 1, 32, 0, 0, 0], draw_z: 3 },
+                                { position: [17, 34, 1.01, 15.5, 0, 0, 0], draw_z: 2 }
+                                                    ]);
+                                                    // Ultra Spawner starts with the same card/UI barrels as Top Banana.
+                                                    setTankMockupGuns("ultraSpawner", [
+                                { position: [23, 36.2, 1, 0, 0, 0, 0], draw_z: 4 },
+                                { position: [3, 36.2, 1, 28, 0, 0, 0], draw_z: 3 },
+                                { position: [13, 31.2, 1.01, 15.5, 0, 0, 0], draw_z: 2 }
+                                                    ]);
+                                                    // Mega Spawner starts with the same card/UI barrels as Ultra Spawner.
+                                                    setTankMockupGuns("megaSpawner", [
+                                { position: [23, 32, 1, 0, 0, 0, 0], draw_z: 4 },
+                                { position: [3, 32, 1, 28, 0, 0, 0], draw_z: 3 },
+                                { position: [13, 26, 1.01, 15.5, 0, 0, 0], draw_z: 2 }
+                                                    ]);
+                                                    // Top Banana minion UI override with a decorative top barrel.
+                                                    // recoil_from: 0 maps both barrels to the real minion gun recoil.
+                                                    setTankMockupGuns("ultraSpawnerMinion", [
+                                { position: [4, 11, 1, 22, 0, 0, 0], draw_z: 4, recoil_from: 0 },
+                                { position: [35, 22, 1, 0, 0, 0, 0], draw_z: 5, recoil_from: 0 }
+                                                    ]);
+                                                    // Ultra Spawner minion UI starts identical to Top Banana minion UI.
+                                                    setTankMockupGuns("ultraSpawnerChild", [
+                                { position: [4, 11, 1, 22, 0, 0, 0], draw_z: 4, recoil_from: 0 },
+                                { position: [30, 30, 1, 0, 0, 0, 0], draw_z: 5, recoil_from: 0 }
+                                                    ]);
+                                                    // Mega Spawner minion UI starts identical to Ultra Spawner minion UI.
+                                                    setTankMockupGuns("megaSpawnerChild", [
+                                { position: [4, 11, 1, 22, 0, 0, 0], draw_z: 4, recoil_from: 0 },
+                                { position: [33, 23, 1, 0, 0, 0, 0], draw_z: 5, recoil_from: 0 }
+                                                    ]);
                                                     setUpgrades("basic", ["flank"], []);
                                                     setUpgrades("flank", ["auto3"], []);
-                                                    setUpgrades("auto3", ["wrench", "spanner"], []);
-                                                    setUpgrades("crowbar", [], ["wrench", "spanner"]);
+                                                    setUpgrades("auto3", ["crowbarT4"], ["wrench", "spanner"]);
+                                                    setUpgrades("crowbarT4", ["wrench", "spanner"], []);
+                                                    setUpgrades("factory", [], ["factorySpawner"]);
+                                                    setUpgrades("littleFactory", ["megaSpawner"], ["ultraSpawner"]);
+                                                    setUpgrades("megaSpawner", ["factorySpawner", "ultraSpawner"], []);
+                                                    const factorySpawnerDef = defs.factorySpawner;
+                                                    if (factorySpawnerDef && Number.isInteger(factorySpawnerDef.index)) {
+                                                        const spawnerEntry = getEntry(factorySpawnerDef.index) || ensureEntryForDef(factorySpawnerDef);
+                                                        if (spawnerEntry) spawnerEntry.upgrades = [];
+                                                    }
                                                 }
+                                                window.__syncCustomTankMockups = syncCustomTankMockups;
                                                 function clean(mockup) {
                                                     mockup.guns = mockup.guns || [];
                                                     mockup.turrets = (mockup.turrets || []).map(clean);
@@ -3469,8 +3609,11 @@
                                                         }
                                                         return mockup;
                                                     }
-                                                    console.log(LZString.decompress(data))
-                                                    return mockups// = //[1].map(clean);
+                                                    mockups = JSON.parse(LZString.decompressFromEncodedURIComponent(data))[1].map(clean);
+                                                    if (typeof window.__syncCustomTankMockups === "function") {
+                                                        window.__syncCustomTankMockups();
+                                                    }
+                                                    return mockups;
                                                 });
                                             };
                                         }; break;
@@ -5234,9 +5377,8 @@
                                 context.lineWidth = Math.max(config.mininumBorderChunk, ratio * config.borderChunk);
                                 {
                                     let positions = source.guns.getPositions();
-                                    const gunCount = Math.min(source.guns.length, m.guns.length);
                                     const gunOrder = Array.from({
-                                        length: gunCount
+                                        length: m.guns.length
                                     }, (_, i) => i).sort((a, b) => {
                                         const ga = m.guns[a] || {};
                                         const gb = m.guns[b] || {};
@@ -5246,7 +5388,9 @@
                                     });
                                     for (const i of gunOrder) {
                                         let g = m.guns[i],
-                                            position = positions[i] / (((g.aspect == null ? 1 : g.aspect) === 1) ? 2 : 1),
+                                            recoilSource = Number.isInteger(g.recoil_source) ? g.recoil_source : i;
+                                        if (recoilSource < 0 || recoilSource >= positions.length) continue;
+                                        let position = positions[recoilSource] / (((g.aspect == null ? 1 : g.aspect) === 1) ? 2 : 1),
                                             gx = g.offset * Math.cos(g.direction + (g.angle || 0) + rot) + (g.length / 2 - position) * Math.cos((g.angle || 0) + rot),
                                             gy = g.offset * Math.sin(g.direction + (g.angle || 0) + rot) + (g.length / 2 - position) * Math.sin((g.angle || 0) + rot),
                                             gColor = mixColors(getColor(g.color == null ? 16 : g.color), renderColor, renderBlend);
