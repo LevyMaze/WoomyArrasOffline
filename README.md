@@ -78,7 +78,7 @@ These tools are mainly meant for development and sandbox testing.
 
 ### Tank Additions and Combat Updates
 
-- Added two tanks: `Wrench` and `Spanner`.
+- Added tanks: `Wrench` and `Spanner`.
 - Added upgrade path: `Basic -> Flank Guard -> Auto-3 -> Wrench / Spanner`.
 - Added `Top Banana` as a factory-line upgrade and placed it in the tier route:
   - `Basic -> Director -> Spawner -> Factory -> Top Banana`
