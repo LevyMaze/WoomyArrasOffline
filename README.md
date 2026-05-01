@@ -76,20 +76,26 @@ These tools are mainly meant for development and sandbox testing.
 
 ---
 
+### Tank Additions and Combat Updates
+
+- Added two tanks: `Wrench` and `Spanner`.
+- Added upgrade path: `Basic -> Flank Guard -> Auto-3 -> Wrench / Spanner`.
+- Added `Top Banana` as a factory-line upgrade and placed it in the tier route:
+  - `Basic -> Director -> Spawner -> Factory -> Top Banana`
+- Added `Ultra Spawner` as a playable Spawner-line tank with its own class setup and 4 minion cap.
+- Added `Mega Spawner` as the tier-4 bridge in the Director/Spawner route.
+- Updated the Director drone branch routing to:
+  - `Basic -> Director -> Spawner -> Mega Spawner -> Top Banana / Ultra Spawner`
+- Split mockup/UI overrides so Top Banana, Ultra Spawner, Mega Spawner, and their minion visuals can be tuned independently.
+- Added mockup sync support for custom tank UI gun layouts (including draw-layer control via `draw_z` in mockup guns).
+- Updated drone right-click follow behavior globally:
+  - Increased cursor stick range.
+  - Drones now keep tracking while right-click is held, and release if the cursor moves away too fast or right-click is released.
+
+---
+
 ## Ongoing Development
 
 This project is still being worked on.
 
 More features may be added over time.
-
----
-
-## Latest Tank Additions
-
-### 21 February 2026
-
-- Added two tanks: `Wrench` and `Spanner`.
-- Added upgrade path: `Basic -> Flank Guard -> Auto-3 -> Wrench / Spanner`.
-- Updated tree links so these tanks appear under Auto-3.
-- Added gameplay support so both tanks are playable in game modes, including Growth modes.
-- Added custom turret/mockup sync updates so UI and in-game turret behavior stay aligned.
