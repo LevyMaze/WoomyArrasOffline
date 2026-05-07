@@ -25,9 +25,6 @@ This project has passed through several contributors:
 - Spade1354
   Restored many missing tanks and added AI and bot improvements. Also merged multiple legacy sources to make the project playable offline.
 
-- LevyMaze
-  Added Growth modes, testing tools, admin features, and continues active development.
-
 ---
 
 ## What I Added
@@ -98,4 +95,5 @@ These tools are mainly meant for development and sandbox testing.
 
 This project is still being worked on.
 
-More features may be added over time.
+I have added (+17) more features, I won't be adding them here. Feel free to play and ask for Tester tokens.
+
